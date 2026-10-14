@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Directory{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0">Patient Registry & Admissions</h2>
+        <small class="text-muted">Hospital master patient index and emergency intake records</small>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Registration Form -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold">Register Patient</h6>
+            </div>
+            <div class="card-body">
+                <form id="patientForm">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">National ID / Aadhar / SSN</label>
+                        <input type="text" class="form-control" placeholder="Leave blank if unidentified">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Full Legal Name</label>
+                        <input type="text" class="form-control" placeholder="Enter patient's name">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Date of Birth</label>
+                        <input type="date" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Gender</label>
+                        <select class="form-select">
+                            <option selected>Select Gender...</option>
+                            <option value="MALE">Male</option>
+                            <option value="FEMALE">Female</option>
+                            <option value="OTHER">Other</option>
+                            <option value="UNKNOWN">Unknown / Unconscious</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Emergency Contact Phone</label>
+                        <input type="tel" class="form-control" placeholder="+91-XXXXX-XXXXX">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        Save Patient Record
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patients Directory Table -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">Patient Master Index</h6>
+                <span class="badge bg-light text-dark border">Active Records</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Patient ID</th>
+                                <th>National ID</th>
+                                <th>Full Name</th>
+                                <th>Gender</th>
+                                <th>Contact</th>
+                                <th>Admitted</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold">#PT-1001</td>
+                                <td>NAT-1001</td>
+                                <td>Rohan Gupta</td>
+                                <td>MALE</td>
+                                <td>+91-9811122233</td>
+                                <td><small class="text-muted">Today, 07:45</small></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">#PT-1002</td>
+                                <td>NAT-1002</td>
+                                <td>Anjali Joshi</td>
+                                <td>FEMALE</td>
+                                <td>+91-9822233344</td>
+                                <td><small class="text-muted">Today, 08:10</small></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">#PT-1003</td>
+                                <td><span class="badge bg-secondary">TRAUMA-ANON</span></td>
+                                <td>Unidentified Trauma Patient #1</td>
+                                <td>UNKNOWN</td>
+                                <td>Brought by Paramedics</td>
+                                <td><small class="text-muted">Today, 08:30</small></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

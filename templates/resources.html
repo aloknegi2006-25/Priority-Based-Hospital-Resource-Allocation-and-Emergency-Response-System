@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Hospital Resources{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0">Hospital Resource Inventory</h2>
+        <small class="text-muted">Live tracking of acute beds, ventilators, and emergency transport units</small>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-outline-primary active btn-sm">All Assets</button>
+        <button class="btn btn-outline-primary btn-sm">Beds & ICUs</button>
+        <button class="btn btn-outline-primary btn-sm">Ambulances</button>
+        <button class="btn btn-outline-primary btn-sm">Ventilators</button>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold">Critical Medical Assets</h6>
+        <span class="badge bg-light text-dark border">Total Tracked: 11 Units</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Resource Code</th>
+                        <th>Type</th>
+                        <th>Location Unit</th>
+                        <th>Current State</th>
+                        <th>Operational Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="fw-bold">ICU-01</td>
+                        <td><span class="badge bg-danger">BED_ICU</span></td>
+                        <td>ICU Ward A - Ground Floor</td>
+                        <td><span class="badge bg-success">AVAILABLE</span></td>
+                        <td><span class="text-success fw-semibold">Ready</span></td>
+                        <td><a href="{{ url_for('main.allocations_view') }}" class="btn btn-sm btn-primary">Allocate</a></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">ICU-02</td>
+                        <td><span class="badge bg-danger">BED_ICU</span></td>
+                        <td>ICU Ward A - Ground Floor</td>
+                        <td><span class="badge bg-secondary">OCCUPIED</span></td>
+                        <td><span class="text-success fw-semibold">In Use</span></td>
+                        <td><a href="{{ url_for('main.allocations_view') }}" class="btn btn-sm btn-outline-secondary">Details</a></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">VENT-01</td>
+                        <td><span class="badge bg-info text-dark">VENTILATOR</span></td>
+                        <td>Respiratory Unit Bay A</td>
+                        <td><span class="badge bg-success">AVAILABLE</span></td>
+                        <td><span class="text-success fw-semibold">Ready</span></td>
+                        <td><a href="{{ url_for('main.allocations_view') }}" class="btn btn-sm btn-primary">Allocate</a></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">AMB-01</td>
+                        <td><span class="badge bg-warning text-dark">AMBULANCE</span></td>
+                        <td>Hospital Transport Bay 1</td>
+                        <td><span class="badge bg-success">AVAILABLE</span></td>
+                        <td><span class="text-success fw-semibold">On Standby</span></td>
+                        <td><a href="{{ url_for('main.allocations_view') }}" class="btn btn-sm btn-warning">Dispatch</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

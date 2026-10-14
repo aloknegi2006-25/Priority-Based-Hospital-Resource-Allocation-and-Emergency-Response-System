@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Emergency Triage Queue{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0">Emergency Triage Queue</h2>
+        <small class="text-muted">Dynamic clinical prioritization based on triage urgency</small>
+    </div>
+    <span class="badge bg-danger fs-6 px-3 py-2">Emergency Department</span>
+</div>
+
+<!-- Priority Scale Reference -->
+<div class="row g-2 mb-4">
+    <div class="col"><div class="p-2 text-center rounded bg-danger text-white small fw-bold">P1: Resuscitation</div></div>
+    <div class="col"><div class="p-2 text-center rounded bg-warning text-dark small fw-bold">P2: Emergent</div></div>
+    <div class="col"><div class="p-2 text-center rounded bg-primary text-white small fw-bold">P3: Urgent</div></div>
+    <div class="col"><div class="p-2 text-center rounded bg-info text-dark small fw-bold">P4: Less Urgent</div></div>
+    <div class="col"><div class="p-2 text-center rounded bg-secondary text-white small fw-bold">P5: Non-Urgent</div></div>
+</div>
+
+<div class="row g-4">
+    <!-- Intake Form Shell -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold">Emergency Case Intake</h6>
+            </div>
+            <div class="card-body">
+                <form id="triageIntakeForm">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Patient ID or Name</label>
+                        <input type="text" class="form-control" placeholder="Enter Patient ID or Leave Blank for Trauma">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Triage Priority Tier</label>
+                        <select class="form-select">
+                            <option selected>Select Priority Level...</option>
+                            <option value="1">Level 1 - Resuscitation (Immediate)</option>
+                            <option value="2">Level 2 - Emergent</option>
+                            <option value="3">Level 3 - Urgent</option>
+                            <option value="4">Level 4 - Less Urgent</option>
+                            <option value="5">Level 5 - Non-urgent</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Chief Complaint / Symptoms</label>
+                        <textarea class="form-control" rows="3" placeholder="Describe symptoms, vital signs, trauma details..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        Add to Emergency Queue
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Priority Queue Table -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">Priority Triage Queue</h6>
+                <span class="badge bg-light text-dark border">Sorted by Severity</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Case ID</th>
+                                <th>Priority</th>
+                                <th>Patient Name</th>
+                                <th>Chief Complaint</th>
+                                <th>Wait Time</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="table-danger">
+                                <td class="fw-bold">#301</td>
+                                <td><span class="badge bg-danger">Level 1</span></td>
+                                <td>Unidentified Trauma Patient</td>
+                                <td>Severe Polytrauma, Unresponsive</td>
+                                <td>2 mins</td>
+                                <td><span class="badge bg-warning text-dark">QUEUED</span></td>
+                                <td><a href="{{ url_for('main.allocations_view') }}" class="btn btn-sm btn-danger">Assign ICU</a></td>
+                            </tr>
+                            <tr class="table-warning">
+                                <td class="fw-bold">#302</td>
+                                <td><span class="badge bg-warning text-dark">Level 2</span></td>
+                                <td>Rohan Gupta</td>
+                                <td>Acute Chest Pain, Dyspnea</td>
+                                <td>8 mins</td>
+                                <td><span class="badge bg-warning text-dark">QUEUED</span></td>
+                                <td><a href="{{ url_for('main.allocations_view') }}" class="btn btn-sm btn-outline-primary">Assign Care</a></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">#303</td>
+                                <td><span class="badge bg-info text-dark">Level 4</span></td>
+                                <td>Anjali Joshi</td>
+                                <td>Forearm Fracture, Hemodynamically Stable</td>
+                                <td>14 mins</td>
+                                <td><span class="badge bg-secondary">QUEUED</span></td>
+                                <td><a href="{{ url_for('main.allocations_view') }}" class="btn btn-sm btn-outline-secondary">Assign Care</a></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

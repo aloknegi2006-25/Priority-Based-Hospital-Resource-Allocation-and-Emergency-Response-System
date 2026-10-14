@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Operational Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0">Emergency Operations Dashboard</h2>
+        <small class="text-muted">Real-time triage queue status and clinical resource utilization</small>
+    </div>
+    <div>
+        <button class="btn btn-outline-primary btn-sm" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh Status
+        </button>
+    </div>
+</div>
+
+<!-- Metric Overview Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0 border-start border-4 border-primary">
+            <div class="card-body">
+                <span class="text-muted text-uppercase fw-semibold small">Active Emergency Queue</span>
+                <h3 class="fw-bold mt-2 mb-0">3</h3>
+                <small class="text-muted">Awaiting Doctor Assignment</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0 border-start border-4 border-danger">
+            <div class="card-body">
+                <span class="text-muted text-uppercase fw-semibold small">Priority 1 (Critical)</span>
+                <h3 class="fw-bold mt-2 mb-0 text-danger">1</h3>
+                <small class="text-danger">Resuscitation Protocol Active</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0 border-start border-4 border-success">
+            <div class="card-body">
+                <span class="text-muted text-uppercase fw-semibold small">ICU Beds Available</span>
+                <h3 class="fw-bold mt-2 mb-0 text-success">2 / 3</h3>
+                <small class="text-muted">Ward A & B</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card shadow-sm border-0 border-start border-4 border-info">
+            <div class="card-body">
+                <span class="text-muted text-uppercase fw-semibold small">Active Allocations</span>
+                <h3 class="fw-bold mt-2 mb-0 text-info">1</h3>
+                <small class="text-muted">Assigned Clinical Assets</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Active Triage Queue Preview -->
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">Live Emergency Triage Queue</h6>
+                <a href="{{ url_for('main.emergency_cases_view') }}" class="btn btn-sm btn-outline-danger">Manage Queue</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Case</th>
+                                <th>Priority</th>
+                                <th>Patient</th>
+                                <th>Complaint</th>
+                                <th>Wait Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="table-danger">
+                                <td class="fw-bold">#301</td>
+                                <td><span class="badge bg-danger">Level 1</span></td>
+                                <td>Unidentified Trauma</td>
+                                <td>Severe Polytrauma, Unresponsive</td>
+                                <td>2m</td>
+                            </tr>
+                            <tr class="table-warning">
+                                <td class="fw-bold">#302</td>
+                                <td><span class="badge bg-warning text-dark">Level 2</span></td>
+                                <td>Rohan Gupta</td>
+                                <td>Acute Chest Pain, Dyspnea</td>
+                                <td>8m</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">#303</td>
+                                <td><span class="badge bg-info text-dark">Level 4</span></td>
+                                <td>Anjali Joshi</td>
+                                <td>Forearm Fracture, Stable</td>
+                                <td>14m</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resource Capacity Status Preview -->
+    <div class="col-lg-5">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">Critical Resource Utilization</h6>
+                <a href="{{ url_for('main.resources_view') }}" class="btn btn-sm btn-outline-primary">View Inventory</a>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="fw-semibold">ICU Beds (1 Occupied, 2 Available)</span>
+                        <span class="text-muted">33%</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-danger" style="width: 33%"></div>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="fw-semibold">Mechanical Ventilators (0 Occupied, 2 Available)</span>
+                        <span class="text-muted">0%</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-success" style="width: 5%"></div>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="fw-semibold">Emergency Ambulances (0 Dispatched, 2 In Bay)</span>
+                        <span class="text-muted">Ready</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-info" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div class="p-3 bg-light rounded small text-muted">
+                    <strong>Notice:</strong> Resource allocations are updated dynamically upon patient assignment and release.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

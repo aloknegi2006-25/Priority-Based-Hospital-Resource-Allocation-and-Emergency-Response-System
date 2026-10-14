@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Active Allocations{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0">Active Resource Allocations</h2>
+        <small class="text-muted">Current clinical bindings between emergency cases and hospital assets</small>
+    </div>
+    <span class="badge bg-primary fs-6 px-3 py-2">Resource Management</span>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold">Active Clinical Assignments</h6>
+        <span class="badge bg-light text-dark border">Active Allocations</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Allocation ID</th>
+                        <th>Case Reference</th>
+                        <th>Allocated Resource</th>
+                        <th>Authorized Doctor</th>
+                        <th>Assigned Time</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="fw-bold">#ALLOC-801</td>
+                        <td>Case #301 (Polytrauma)</td>
+                        <td><span class="badge bg-danger">ICU-02</span></td>
+                        <td>Dr. Rajesh Sharma</td>
+                        <td>Today, 08:15</td>
+                        <td><span class="badge bg-success">ACTIVE</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger" onclick="alert('Resource release initiated.')">
+                                Release Asset
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
