@@ -1,7 +1,7 @@
 """
 Application Entry Point: Priority-Based Hospital Resource Allocation and Emergency Response System
-Team: SysForge | Academic Focus: DBMS + OS Concepts
-Phase 2: Scaffolding Only. Business logic and algorithms deferred to Phase 3.
+Team: SysForge | Phase 2: Functional Implementation (~40-50% Verified Completion).
+Patient management, triage priority scheduling, resource inventory, atomic allocation/release, and live dashboard.
 """
 
 from flask import Flask, jsonify
@@ -44,5 +44,6 @@ app = create_app()
 if __name__ == '__main__':
     import os
     port = int(os.environ.get('PORT', 5001))
-    # Local development server execution (port 5001 avoids macOS AirPlay conflict)
-    app.run(host='0.0.0.0', port=port, debug=Config.DEBUG)
+    # Default host to 127.0.0.1 for local isolation unless HOST env var explicitly specifies network access (e.g. 0.0.0.0)
+    host = os.environ.get('HOST', '127.0.0.1')
+    app.run(host=host, port=port, debug=Config.DEBUG)

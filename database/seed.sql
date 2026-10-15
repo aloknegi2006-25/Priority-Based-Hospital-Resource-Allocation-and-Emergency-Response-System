@@ -31,17 +31,56 @@ VALUES
 ON DUPLICATE KEY UPDATE location_unit=VALUES(location_unit);
 
 -- 3. Insert Initial Patients
+-- Identified patients use ON DUPLICATE KEY UPDATE keyed on unique national_id.
 INSERT INTO patients (national_id, full_name, date_of_birth, gender, contact_phone, emergency_contact)
 VALUES
     ('NAT-1001', 'Rohan Gupta', '1988-04-12', 'MALE', '+91-9811122233', 'Kavita Gupta (+91-9811122234)'),
-    ('NAT-1002', 'Anjali Joshi', '1995-11-20', 'FEMALE', '+91-9822233344', 'Suresh Joshi (+91-9822233345)'),
-    (NULL, 'Unidentified Male Trauma #1', NULL, 'MALE', NULL, 'Brought by Bystander')
+    ('NAT-1002', 'Anjali Joshi', '1995-11-20', 'FEMALE', '+91-9822233344', 'Suresh Joshi (+91-9822233345)')
 ON DUPLICATE KEY UPDATE full_name=VALUES(full_name);
 
+-- Unidentified trauma patient (NULL national_id: check existence before insert to prevent duplicate rows)
+INSERT INTO patients (national_id, full_name, date_of_birth, gender, contact_phone, emergency_contact)
+SELECT NULL, 'Unidentified Male Trauma #1', NULL, 'MALE', NULL, 'Brought by Bystander'
+WHERE NOT EXISTS (
+    SELECT 1 FROM patients WHERE full_name = 'Unidentified Male Trauma #1' AND national_id IS NULL
+);
+
 -- 4. Insert Emergency Cases (Demonstrating Multi-Level Priority Queue)
+-- Locate intended patients using stable identifiers (national_id / full_name) instead of assuming IDs 1, 2, 3.
+-- Prevent duplicate demonstration cases if seed is executed repeatedly.
+
+-- Case 1: Priority 2 (Emergent) for NAT-1001
 INSERT INTO emergency_cases (patient_id, priority_level, chief_complaint, triage_status)
-VALUES
-    (1, 2, 'Acute Chest Pain, Dyspnea, Suspected Myocardial Infarction', 'QUEUED'),
-    (2, 4, 'Moderate Forearm Fracture, Hemodynamically Stable', 'QUEUED'),
-    (3, 1, 'Severe Polytrauma, Unresponsive, Immediate Resuscitation Required', 'QUEUED')
-ON DUPLICATE KEY UPDATE chief_complaint=VALUES(chief_complaint);
+SELECT p.patient_id, 2, 'Acute Chest Pain, Dyspnea, Suspected Myocardial Infarction', 'QUEUED'
+FROM patients p
+WHERE p.national_id = 'NAT-1001'
+  AND NOT EXISTS (
+      SELECT 1 FROM emergency_cases ec
+      WHERE ec.patient_id = p.patient_id
+        AND ec.chief_complaint = 'Acute Chest Pain, Dyspnea, Suspected Myocardial Infarction'
+  )
+LIMIT 1;
+
+-- Case 2: Priority 4 (Less Urgent) for NAT-1002
+INSERT INTO emergency_cases (patient_id, priority_level, chief_complaint, triage_status)
+SELECT p.patient_id, 4, 'Moderate Forearm Fracture, Hemodynamically Stable', 'QUEUED'
+FROM patients p
+WHERE p.national_id = 'NAT-1002'
+  AND NOT EXISTS (
+      SELECT 1 FROM emergency_cases ec
+      WHERE ec.patient_id = p.patient_id
+        AND ec.chief_complaint = 'Moderate Forearm Fracture, Hemodynamically Stable'
+  )
+LIMIT 1;
+
+-- Case 3: Priority 1 (Resuscitation / Immediate) for Unidentified Trauma Patient
+INSERT INTO emergency_cases (patient_id, priority_level, chief_complaint, triage_status)
+SELECT p.patient_id, 1, 'Severe Polytrauma, Unresponsive, Immediate Resuscitation Required', 'QUEUED'
+FROM patients p
+WHERE p.full_name = 'Unidentified Male Trauma #1' AND p.national_id IS NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM emergency_cases ec
+      WHERE ec.patient_id = p.patient_id
+        AND ec.chief_complaint = 'Severe Polytrauma, Unresponsive, Immediate Resuscitation Required'
+  )
+LIMIT 1;

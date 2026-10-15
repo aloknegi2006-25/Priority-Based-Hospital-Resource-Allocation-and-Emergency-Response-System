@@ -9,17 +9,33 @@
         <small class="text-muted">Live tracking of acute beds, ventilators, and emergency transport units</small>
     </div>
     <div class="btn-group">
-        <button class="btn btn-outline-primary active btn-sm">All Assets</button>
-        <button class="btn btn-outline-primary btn-sm">Beds & ICUs</button>
-        <button class="btn btn-outline-primary btn-sm">Ambulances</button>
-        <button class="btn btn-outline-primary btn-sm">Ventilators</button>
+        <a href="{{ url_for('main.resources_view') }}" class="btn btn-outline-primary btn-sm {% if not current_type and not current_status %}active{% endif %}">
+            All Assets
+        </a>
+        <a href="{{ url_for('main.resources_view', type='BED_ICU') }}" class="btn btn-outline-primary btn-sm {% if current_type == 'BED_ICU' %}active{% endif %}">
+            ICU Beds
+        </a>
+        <a href="{{ url_for('main.resources_view', type='BED_GENERAL') }}" class="btn btn-outline-primary btn-sm {% if current_type == 'BED_GENERAL' %}active{% endif %}">
+            General Beds
+        </a>
+        <a href="{{ url_for('main.resources_view', type='VENTILATOR') }}" class="btn btn-outline-primary btn-sm {% if current_type == 'VENTILATOR' %}active{% endif %}">
+            Ventilators
+        </a>
+        <a href="{{ url_for('main.resources_view', type='AMBULANCE') }}" class="btn btn-outline-primary btn-sm {% if current_type == 'AMBULANCE' %}active{% endif %}">
+            Ambulances
+        </a>
+        <a href="{{ url_for('main.resources_view', status='AVAILABLE') }}" class="btn btn-outline-success btn-sm {% if current_status == 'AVAILABLE' %}active{% endif %}">
+            Available Only
+        </a>
     </div>
 </div>
 
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
         <h6 class="mb-0 fw-bold">Critical Medical Assets</h6>
-        <span class="badge bg-light text-dark border">Total Tracked: 11 Units</span>
+        <span class="badge bg-light text-dark border">
+            Total Assets: {{ resources|length if resources else 0 }}
+        </span>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -27,7 +43,7 @@
                 <thead class="table-light">
                     <tr>
                         <th>Resource Code</th>
-                        <th>Type</th>
+                        <th>Type / Category</th>
                         <th>Location Unit</th>
                         <th>Current State</th>
                         <th>Operational Status</th>
@@ -35,38 +51,63 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td class="fw-bold">ICU-01</td>
-                        <td><span class="badge bg-danger">BED_ICU</span></td>
-                        <td>ICU Ward A - Ground Floor</td>
-                        <td><span class="badge bg-success">AVAILABLE</span></td>
-                        <td><span class="text-success fw-semibold">Ready</span></td>
-                        <td><a href="{{ url_for('main.allocations_view') }}" class="btn btn-sm btn-primary">Allocate</a></td>
-                    </tr>
-                    <tr>
-                        <td class="fw-bold">ICU-02</td>
-                        <td><span class="badge bg-danger">BED_ICU</span></td>
-                        <td>ICU Ward A - Ground Floor</td>
-                        <td><span class="badge bg-secondary">OCCUPIED</span></td>
-                        <td><span class="text-success fw-semibold">In Use</span></td>
-                        <td><a href="{{ url_for('main.allocations_view') }}" class="btn btn-sm btn-outline-secondary">Details</a></td>
-                    </tr>
-                    <tr>
-                        <td class="fw-bold">VENT-01</td>
-                        <td><span class="badge bg-info text-dark">VENTILATOR</span></td>
-                        <td>Respiratory Unit Bay A</td>
-                        <td><span class="badge bg-success">AVAILABLE</span></td>
-                        <td><span class="text-success fw-semibold">Ready</span></td>
-                        <td><a href="{{ url_for('main.allocations_view') }}" class="btn btn-sm btn-primary">Allocate</a></td>
-                    </tr>
-                    <tr>
-                        <td class="fw-bold">AMB-01</td>
-                        <td><span class="badge bg-warning text-dark">AMBULANCE</span></td>
-                        <td>Hospital Transport Bay 1</td>
-                        <td><span class="badge bg-success">AVAILABLE</span></td>
-                        <td><span class="text-success fw-semibold">On Standby</span></td>
-                        <td><a href="{{ url_for('main.allocations_view') }}" class="btn btn-sm btn-warning">Dispatch</a></td>
-                    </tr>
+                    {% if resources and resources|length > 0 %}
+                        {% for r in resources %}
+                        <tr>
+                            <td class="fw-bold">{{ r.resource_code }}</td>
+                            <td>
+                                {% if 'ICU' in r.resource_type %}
+                                    <span class="badge bg-danger">BED_ICU</span>
+                                {% elif 'VENT' in r.resource_type %}
+                                    <span class="badge bg-info text-dark">VENTILATOR</span>
+                                {% elif 'AMB' in r.resource_type %}
+                                    <span class="badge bg-warning text-dark">AMBULANCE</span>
+                                {% else %}
+                                    <span class="badge bg-primary">{{ r.resource_type }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ r.location_unit }}</td>
+                            <td>
+                                {% if r.status == 'AVAILABLE' %}
+                                    <span class="badge bg-success">AVAILABLE</span>
+                                {% elif r.status == 'ALLOCATED' %}
+                                    <span class="badge bg-secondary">ALLOCATED</span>
+                                {% elif r.status == 'MAINTENANCE' %}
+                                    <span class="badge bg-warning text-dark">MAINTENANCE</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark border">{{ r.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.is_operational %}
+                                    <span class="text-success small fw-semibold">● Operational</span>
+                                {% else %}
+                                    <span class="text-danger small fw-semibold">● Out of Service</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.status == 'AVAILABLE' and r.is_operational %}
+                                    <a href="{{ url_for('main.allocations_view') }}?resource_id={{ r.resource_id }}" class="btn btn-sm btn-primary">
+                                        Allocate
+                                    </a>
+                                {% elif r.status == 'ALLOCATED' %}
+                                    <a href="{{ url_for('main.allocations_view') }}" class="btn btn-sm btn-outline-secondary">
+                                        View Lock
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted small">Unavailable</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <h6 class="fw-bold text-dark">No Resources Found</h6>
+                                <p class="small text-muted mb-0">No matching hospital assets found for the selected filter.</p>
+                            </td>
+                        </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>

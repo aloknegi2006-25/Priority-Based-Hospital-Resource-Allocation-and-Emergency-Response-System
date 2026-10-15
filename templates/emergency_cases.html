@@ -11,45 +11,55 @@
     <span class="badge bg-danger fs-6 px-3 py-2">Emergency Department</span>
 </div>
 
-<!-- Priority Scale Reference -->
+<!-- Priority Scale Reference (ESI Standard) -->
 <div class="row g-2 mb-4">
-    <div class="col"><div class="p-2 text-center rounded bg-danger text-white small fw-bold">P1: Resuscitation</div></div>
-    <div class="col"><div class="p-2 text-center rounded bg-warning text-dark small fw-bold">P2: Emergent</div></div>
-    <div class="col"><div class="p-2 text-center rounded bg-primary text-white small fw-bold">P3: Urgent</div></div>
-    <div class="col"><div class="p-2 text-center rounded bg-info text-dark small fw-bold">P4: Less Urgent</div></div>
-    <div class="col"><div class="p-2 text-center rounded bg-secondary text-white small fw-bold">P5: Non-Urgent</div></div>
+    <div class="col"><div class="p-2 text-center rounded bg-danger text-white small fw-bold">P1: Resuscitation (Immediate)</div></div>
+    <div class="col"><div class="p-2 text-center rounded bg-warning text-dark small fw-bold">P2: Emergent (&lt;15m)</div></div>
+    <div class="col"><div class="p-2 text-center rounded bg-primary text-white small fw-bold">P3: Urgent (&lt;30m)</div></div>
+    <div class="col"><div class="p-2 text-center rounded bg-info text-dark small fw-bold">P4: Less Urgent (&lt;60m)</div></div>
+    <div class="col"><div class="p-2 text-center rounded bg-secondary text-white small fw-bold">P5: Non-Urgent (&lt;120m)</div></div>
 </div>
 
 <div class="row g-4">
-    <!-- Intake Form Shell -->
+    <!-- Intake Form -->
     <div class="col-lg-4">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white py-3">
                 <h6 class="mb-0 fw-bold">Emergency Case Intake</h6>
             </div>
             <div class="card-body">
-                <form id="triageIntakeForm">
+                <form id="triageIntakeForm" method="POST" action="{{ url_for('main.emergency_cases_view') }}">
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Patient ID or Name</label>
-                        <input type="text" class="form-control" placeholder="Enter Patient ID or Leave Blank for Trauma">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Triage Priority Tier</label>
-                        <select class="form-select">
-                            <option selected>Select Priority Level...</option>
-                            <option value="1">Level 1 - Resuscitation (Immediate)</option>
-                            <option value="2">Level 2 - Emergent</option>
-                            <option value="3">Level 3 - Urgent</option>
-                            <option value="4">Level 4 - Less Urgent</option>
-                            <option value="5">Level 5 - Non-urgent</option>
+                        <label class="form-label small fw-semibold">Select Registered Patient <span class="text-danger">*</span></label>
+                        <select class="form-select" name="patient_id" required>
+                            <option value="">-- Choose Existing Patient --</option>
+                            {% for p in patients %}
+                                <option value="{{ p.patient_id }}">
+                                    #PT-{{ p.patient_id }}: {{ p.full_name }} {% if p.national_id %}({{ p.national_id }}){% endif %}
+                                </option>
+                            {% endfor %}
                         </select>
+                        <div class="form-text small">
+                            Patient not listed? <a href="{{ url_for('main.patients_view') }}" target="_blank">Register patient first</a>.
+                        </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Chief Complaint / Symptoms</label>
-                        <textarea class="form-control" rows="3" placeholder="Describe symptoms, vital signs, trauma details..."></textarea>
+                        <label class="form-label small fw-semibold">Clinical Priority Tier <span class="text-danger">*</span></label>
+                        <select class="form-select" name="priority_level" required>
+                            <option value="1">Level 1 - Resuscitation (Immediate Life Threat)</option>
+                            <option value="2">Level 2 - Emergent (&lt;15 mins)</option>
+                            <option value="3" selected>Level 3 - Urgent (&lt;30 mins)</option>
+                            <option value="4">Level 4 - Less Urgent (&lt;60 mins)</option>
+                            <option value="5">Level 5 - Non-urgent (&lt;120 mins)</option>
+                        </select>
+                        <div class="form-text small text-muted">Priority must be confirmed by attending clinical staff.</div>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">
-                        Add to Emergency Queue
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Chief Complaint / Symptoms <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="chief_complaint" rows="3" placeholder="Describe symptoms, vital signs, trauma details..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-danger w-100 fw-semibold">
+                        Enqueue Emergency Case
                     </button>
                 </form>
             </div>
@@ -60,8 +70,10 @@
     <div class="col-lg-8">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 fw-bold">Priority Triage Queue</h6>
-                <span class="badge bg-light text-dark border">Sorted by Severity</span>
+                <h6 class="mb-0 fw-bold">Live Priority Triage Queue</h6>
+                <span class="badge bg-light text-dark border">
+                    Sorted: Priority ASC, Arrival ASC (FIFO)
+                </span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -72,39 +84,65 @@
                                 <th>Priority</th>
                                 <th>Patient Name</th>
                                 <th>Chief Complaint</th>
-                                <th>Wait Time</th>
+                                <th>Arrival Time</th>
                                 <th>Status</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="table-danger">
-                                <td class="fw-bold">#301</td>
-                                <td><span class="badge bg-danger">Level 1</span></td>
-                                <td>Unidentified Trauma Patient</td>
-                                <td>Severe Polytrauma, Unresponsive</td>
-                                <td>2 mins</td>
-                                <td><span class="badge bg-warning text-dark">QUEUED</span></td>
-                                <td><a href="{{ url_for('main.allocations_view') }}" class="btn btn-sm btn-danger">Assign ICU</a></td>
-                            </tr>
-                            <tr class="table-warning">
-                                <td class="fw-bold">#302</td>
-                                <td><span class="badge bg-warning text-dark">Level 2</span></td>
-                                <td>Rohan Gupta</td>
-                                <td>Acute Chest Pain, Dyspnea</td>
-                                <td>8 mins</td>
-                                <td><span class="badge bg-warning text-dark">QUEUED</span></td>
-                                <td><a href="{{ url_for('main.allocations_view') }}" class="btn btn-sm btn-outline-primary">Assign Care</a></td>
-                            </tr>
-                            <tr>
-                                <td class="fw-bold">#303</td>
-                                <td><span class="badge bg-info text-dark">Level 4</span></td>
-                                <td>Anjali Joshi</td>
-                                <td>Forearm Fracture, Hemodynamically Stable</td>
-                                <td>14 mins</td>
-                                <td><span class="badge bg-secondary">QUEUED</span></td>
-                                <td><a href="{{ url_for('main.allocations_view') }}" class="btn btn-sm btn-outline-secondary">Assign Care</a></td>
-                            </tr>
+                            {% if cases and cases|length > 0 %}
+                                {% for c in cases %}
+                                <tr class="{% if c.priority_level == 1 %}table-danger{% elif c.priority_level == 2 %}table-warning{% endif %}">
+                                    <td class="fw-bold">#{{ c.case_id }}</td>
+                                    <td>
+                                        {% if c.priority_level == 1 %}
+                                            <span class="badge bg-danger">Level 1</span>
+                                        {% elif c.priority_level == 2 %}
+                                            <span class="badge bg-warning text-dark">Level 2</span>
+                                        {% elif c.priority_level == 3 %}
+                                            <span class="badge bg-primary">Level 3</span>
+                                        {% elif c.priority_level == 4 %}
+                                            <span class="badge bg-info text-dark">Level 4</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Level 5</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="fw-semibold text-dark">{{ c.patient_name }}</td>
+                                    <td>{{ c.chief_complaint }}</td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ c.admitted_at[:16] if c.admitted_at is string else (c.admitted_at.strftime('%Y-%m-%d %H:%M') if c.admitted_at else '—') }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if c.triage_status == 'QUEUED' %}bg-warning text-dark{% elif c.triage_status == 'IN_TREATMENT' %}bg-primary{% elif c.triage_status == 'RESOLVED' %}bg-success{% else %}bg-secondary{% endif %}">
+                                            {{ c.triage_status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if c.triage_status != 'RESOLVED' %}
+                                            <a href="{{ url_for('main.allocations_view') }}?case_id={{ c.case_id }}" class="btn btn-sm btn-outline-primary">
+                                                Allocate
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted small">Closed</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <div class="mb-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-inbox text-secondary" viewBox="0 0 16 16">
+                                              <path d="M4.98 4a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 10 8h4.46l-3.05-3.812A.5.5 0 0 0 11.02 4zm-1.17-.437A1.5 1.5 0 0 1 4.98 3h6.04a1.5 1.5 0 0 1 1.17.563l3.7 4.625a1 1 0 0 1 .11.88l-1.5 6a1 1 0 0 1-.97.77H2.47a1 1 0 0 1-.97-.77l-1.5-6a1 1 0 0 1 .11-.88z"/>
+                                            </svg>
+                                        </div>
+                                        <h6 class="fw-bold text-dark">No Active Emergency Cases in Queue</h6>
+                                        <p class="small text-muted mb-0">Select a registered patient on the left to enqueue an urgent case.</p>
+                                    </td>
+                                </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>

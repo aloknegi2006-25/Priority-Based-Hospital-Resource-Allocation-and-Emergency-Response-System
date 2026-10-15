@@ -18,34 +18,38 @@
                 <h6 class="mb-0 fw-bold">Register Patient</h6>
             </div>
             <div class="card-body">
-                <form id="patientForm">
+                <form id="patientForm" method="POST" action="{{ url_for('main.patients_view') }}">
                     <div class="mb-3">
                         <label class="form-label small fw-semibold">National ID / Aadhar / SSN</label>
-                        <input type="text" class="form-control" placeholder="Leave blank if unidentified">
+                        <input type="text" class="form-control" name="national_id" placeholder="Leave blank if unidentified">
+                        <div class="form-text small text-muted">Optional for acute unidentified trauma cases.</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Full Legal Name</label>
-                        <input type="text" class="form-control" placeholder="Enter patient's name">
+                        <label class="form-label small fw-semibold">Full Legal Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="full_name" placeholder="Enter patient's name" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-semibold">Date of Birth</label>
-                        <input type="date" class="form-control">
+                        <input type="date" class="form-control" name="date_of_birth">
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-semibold">Gender</label>
-                        <select class="form-select">
-                            <option selected>Select Gender...</option>
+                        <select class="form-select" name="gender">
                             <option value="MALE">Male</option>
                             <option value="FEMALE">Female</option>
                             <option value="OTHER">Other</option>
-                            <option value="UNKNOWN">Unknown / Unconscious</option>
+                            <option value="UNKNOWN" selected>Unknown / Unconscious</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Emergency Contact Phone</label>
-                        <input type="tel" class="form-control" placeholder="+91-XXXXX-XXXXX">
+                        <label class="form-label small fw-semibold">Contact Phone</label>
+                        <input type="tel" class="form-control" name="contact_phone" placeholder="+91-XXXXX-XXXXX">
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Emergency Contact / Companion</label>
+                        <input type="text" class="form-control" name="emergency_contact" placeholder="e.g. Spouse / Relative / Paramedic">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 fw-semibold">
                         Save Patient Record
                     </button>
                 </form>
@@ -58,7 +62,9 @@
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold">Patient Master Index</h6>
-                <span class="badge bg-light text-dark border">Active Records</span>
+                <span class="badge bg-light text-dark border">
+                    Total Registered: {{ patients|length if patients else 0 }}
+                </span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -70,34 +76,49 @@
                                 <th>Full Name</th>
                                 <th>Gender</th>
                                 <th>Contact</th>
+                                <th>Emergency Contact</th>
                                 <th>Admitted</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td class="fw-bold">#PT-1001</td>
-                                <td>NAT-1001</td>
-                                <td>Rohan Gupta</td>
-                                <td>MALE</td>
-                                <td>+91-9811122233</td>
-                                <td><small class="text-muted">Today, 07:45</small></td>
-                            </tr>
-                            <tr>
-                                <td class="fw-bold">#PT-1002</td>
-                                <td>NAT-1002</td>
-                                <td>Anjali Joshi</td>
-                                <td>FEMALE</td>
-                                <td>+91-9822233344</td>
-                                <td><small class="text-muted">Today, 08:10</small></td>
-                            </tr>
-                            <tr>
-                                <td class="fw-bold">#PT-1003</td>
-                                <td><span class="badge bg-secondary">TRAUMA-ANON</span></td>
-                                <td>Unidentified Trauma Patient #1</td>
-                                <td>UNKNOWN</td>
-                                <td>Brought by Paramedics</td>
-                                <td><small class="text-muted">Today, 08:30</small></td>
-                            </tr>
+                            {% if patients and patients|length > 0 %}
+                                {% for p in patients %}
+                                <tr>
+                                    <td class="fw-bold">#PT-{{ p.patient_id }}</td>
+                                    <td>
+                                        {% if p.national_id %}
+                                            <span class="fw-semibold">{{ p.national_id }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">UNIDENTIFIED</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="fw-semibold text-dark">{{ p.full_name }}</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">{{ p.gender }}</span>
+                                    </td>
+                                    <td>{{ p.contact_phone or '—' }}</td>
+                                    <td><small class="text-muted">{{ p.emergency_contact or '—' }}</small></td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ p.created_at[:16] if p.created_at is string else (p.created_at.strftime('%Y-%m-%d %H:%M') if p.created_at else '—') }}
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <div class="mb-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-person-x text-secondary" viewBox="0 0 16 16">
+                                              <path d="M11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0M8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m.256 7a4.5 4.5 0 0 1-.229-1.004H3c.001-.246.154-.986.832-1.664C4.484 10.68 5.711 10 8 10q.39 0 .74.025c.226-.341.496-.65.804-.918Q8.844 9.002 8 9c-5 0-6 3-6 4s1 1 1 1z"/>
+                                              <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m-.646-4.854.646.647.646-.647a.5.5 0 0 1 .708.708l-.647.646.647.646a.5.5 0 0 1-.708.708l-.646-.647-.646.647a.5.5 0 0 1-.708-.708l.647-.646-.647-.646a.5.5 0 0 1 .708-.708"/>
+                                            </svg>
+                                        </div>
+                                        <h6 class="fw-bold text-dark">No Patients Registered Yet</h6>
+                                        <p class="small text-muted mb-0">Use the registration form on the left to add a new patient to the registry.</p>
+                                    </td>
+                                </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
