@@ -2,7 +2,6 @@
 
 **Team Name:** SysForge
 **Academic Focus:** Database Management Systems (DBMS) & Operating Systems (OS)
-**Milestone:** PBL Phase 2 (Functional Implementation ~40–50%)
 
 ---
 
