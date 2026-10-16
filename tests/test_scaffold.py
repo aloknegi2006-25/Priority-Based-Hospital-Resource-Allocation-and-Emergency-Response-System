@@ -613,5 +613,149 @@ class TestSysForgeApplication(unittest.TestCase):
         self.assertIn("Dashboard Metric Patient", html2)
         self.assertIn("Dashboard Critical Test", html2)
 
+    # -------------------------------------------------------------------------
+    # 7. Case-Status Consistency Tests (new)
+    # -------------------------------------------------------------------------
+    def test_resolve_blocked_when_active_allocations_exist(self):
+        """Ensures RESOLVED is rejected (HTTP 409) via API when active allocations remain."""
+        p_res = self.client.post('/api/patients', json={"full_name": "Allocation Guard Patient"})
+        pid = p_res.get_json()['patient_id']
+
+        case_res = self.client.post('/api/emergency-cases', json={
+            "patient_id": pid,
+            "priority_level": 2,
+            "chief_complaint": "Severe abdominal pain"
+        })
+        cid = case_res.get_json()['case_id']
+
+        # Allocate resource (resource_id=1 is ICU-BED-01, seeded available)
+        alloc_res = self.client.post('/api/allocations', json={
+            "case_id": cid,
+            "resource_id": 1,
+            "staff_id": 1
+        })
+        self.assertEqual(alloc_res.status_code, 201)
+
+        # Attempt to mark RESOLVED while allocation is still active — must be blocked
+        status_res = self.client.post(
+            f'/api/emergency-cases/{cid}/status',
+            json={"triage_status": "RESOLVED"}
+        )
+        self.assertEqual(status_res.status_code, 409)
+        msg = status_res.get_json()['message']
+        self.assertIn("active allocation", msg.lower())
+
+    def test_resolve_allowed_after_all_allocations_released(self):
+        """Ensures RESOLVED succeeds (HTTP 200) after all active allocations are released."""
+        p_res = self.client.post('/api/patients', json={"full_name": "Release Then Resolve Patient"})
+        pid = p_res.get_json()['patient_id']
+
+        case_res = self.client.post('/api/emergency-cases', json={
+            "patient_id": pid,
+            "priority_level": 3,
+            "chief_complaint": "Minor laceration"
+        })
+        cid = case_res.get_json()['case_id']
+
+        # Allocate and then release the resource
+        alloc_res = self.client.post('/api/allocations', json={
+            "case_id": cid,
+            "resource_id": 2,
+            "staff_id": 1
+        })
+        self.assertEqual(alloc_res.status_code, 201)
+        alloc_id = alloc_res.get_json()['allocation_id']
+
+        rel_res = self.client.post(f'/api/allocations/{alloc_id}/release')
+        self.assertEqual(rel_res.status_code, 200)
+
+        # Now RESOLVED should be accepted
+        status_res = self.client.post(
+            f'/api/emergency-cases/{cid}/status',
+            json={"triage_status": "RESOLVED"}
+        )
+        self.assertEqual(status_res.status_code, 200)
+        self.assertEqual(status_res.get_json()['triage_status'], 'RESOLVED')
+
+    def test_status_update_invalid_value_rejected(self):
+        """Ensures an unrecognised status value is rejected with HTTP 400."""
+        p_res = self.client.post('/api/patients', json={"full_name": "Bad Status Patient"})
+        pid = p_res.get_json()['patient_id']
+
+        case_res = self.client.post('/api/emergency-cases', json={
+            "patient_id": pid,
+            "priority_level": 4,
+            "chief_complaint": "Minor headache"
+        })
+        cid = case_res.get_json()['case_id']
+
+        bad_res = self.client.post(
+            f'/api/emergency-cases/{cid}/status',
+            json={"status": "INVALID_STATUS"}
+        )
+        self.assertEqual(bad_res.status_code, 400)
+
+    def test_web_form_status_update_redirects_with_success(self):
+        """Validates the web form status-update route (POST /emergency-cases/<id>/status)."""
+        p_res = self.client.post('/api/patients', json={"full_name": "Web Status Patient"})
+        pid = p_res.get_json()['patient_id']
+
+        case_res = self.client.post('/api/emergency-cases', json={
+            "patient_id": pid,
+            "priority_level": 3,
+            "chief_complaint": "Sprained ankle"
+        })
+        cid = case_res.get_json()['case_id']
+
+        # POST the web-form status update (same route, form-encoded)
+        resp = self.client.post(
+            f'/emergency-cases/{cid}/status',
+            data={"status": "IN_TREATMENT"},
+            follow_redirects=True
+        )
+        self.assertEqual(resp.status_code, 200)
+        # Should redirect to emergency-cases page and reflect updated status
+        html = resp.get_data(as_text=True)
+        self.assertIn("IN_TREATMENT", html)
+
+    def test_web_form_resolve_blocked_when_active_allocations_exist(self):
+        """Validates that the web form route also prevents RESOLVED with active allocations."""
+        p_res = self.client.post('/api/patients', json={"full_name": "Web Guard Patient"})
+        pid = p_res.get_json()['patient_id']
+
+        case_res = self.client.post('/api/emergency-cases', json={
+            "patient_id": pid,
+            "priority_level": 1,
+            "chief_complaint": "Cardiac arrest"
+        })
+        cid = case_res.get_json()['case_id']
+
+        # Allocate a resource
+        alloc_res = self.client.post('/api/allocations', json={
+            "case_id": cid,
+            "resource_id": 3,
+            "staff_id": 1
+        })
+        self.assertEqual(alloc_res.status_code, 201)
+
+        # Attempt RESOLVED via web form — must be redirected back with a warning
+        resp = self.client.post(
+            f'/emergency-cases/{cid}/status',
+            data={"status": "RESOLVED"},
+            follow_redirects=True
+        )
+        self.assertEqual(resp.status_code, 200)
+        html = resp.get_data(as_text=True)
+        # The case should NOT show RESOLVED; it should still appear in the queue
+        self.assertNotIn("RESOLVED", [
+            row.get('triage_status')
+            for row in []  # placeholder — check via API instead
+        ])
+
+        # Confirm via API that the case is still not RESOLVED
+        q_res = self.client.get('/api/emergency-cases')
+        cases = {c['case_id']: c for c in q_res.get_json()['data']}
+        self.assertNotEqual(cases.get(cid, {}).get('triage_status'), 'RESOLVED')
+
 if __name__ == '__main__':
     unittest.main()

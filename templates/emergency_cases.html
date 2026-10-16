@@ -121,9 +121,20 @@
                                     </td>
                                     <td>
                                         {% if c.triage_status != 'RESOLVED' %}
-                                            <a href="{{ url_for('main.allocations_view') }}?case_id={{ c.case_id }}" class="btn btn-sm btn-outline-primary">
-                                                Allocate
-                                            </a>
+                                            <div class="d-flex gap-1 flex-wrap align-items-center">
+                                                <a href="{{ url_for('main.allocations_view') }}?case_id={{ c.case_id }}" class="btn btn-sm btn-outline-primary">
+                                                    Allocate
+                                                </a>
+                                                <form method="POST" action="{{ url_for('main.update_case_status_view', case_id=c.case_id) }}" class="d-inline-flex gap-1 align-items-center">
+                                                    <select name="status" class="form-select form-select-sm" style="width:auto;min-width:130px;" title="Change case status">
+                                                        <option value="QUEUED" {% if c.triage_status == 'QUEUED' %}selected{% endif %}>QUEUED</option>
+                                                        <option value="IN_TREATMENT" {% if c.triage_status == 'IN_TREATMENT' %}selected{% endif %}>IN_TREATMENT</option>
+                                                        <option value="TRANSFERRED" {% if c.triage_status == 'TRANSFERRED' %}selected{% endif %}>TRANSFERRED</option>
+                                                        <option value="RESOLVED">RESOLVED</option>
+                                                    </select>
+                                                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Apply status change">✓</button>
+                                                </form>
+                                            </div>
                                         {% else %}
                                             <span class="text-muted small">Closed</span>
                                         {% endif %}

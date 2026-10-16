@@ -338,7 +338,11 @@ def create_emergency_case():
 
 @patient_bp.route('/emergency-cases/<int:case_id>/status', methods=['POST'])
 def update_case_status(case_id):
-    """Updates the triage status of an existing emergency case."""
+    """Updates the triage status of an existing emergency case.
+
+    Prevents marking a case RESOLVED while any active resource allocations remain,
+    ensuring case, allocation, and resource records stay consistent.
+    """
     payload = request.get_json(silent=True) or request.form.to_dict() or {}
     new_status = str(payload.get('status') or payload.get('triage_status') or '').strip().upper()
 
@@ -350,12 +354,30 @@ def update_case_status(case_id):
 
     try:
         case = execute_query(
-            "SELECT case_id FROM emergency_cases WHERE case_id = %s",
+            "SELECT case_id, triage_status FROM emergency_cases WHERE case_id = %s",
             (case_id,),
             fetch='one'
         )
         if not case:
             return jsonify({"status": "error", "message": f"Emergency case #{case_id} not found."}), 404
+
+        # Prevent RESOLVED if active allocations still exist for this case.
+        if new_status == 'RESOLVED':
+            active_allocs = execute_query(
+                "SELECT COUNT(*) AS cnt FROM resource_allocations "
+                "WHERE case_id = %s AND status = 'ACTIVE'",
+                (case_id,),
+                fetch='one'
+            )
+            if active_allocs and active_allocs['cnt'] > 0:
+                return jsonify({
+                    "status": "error",
+                    "message": (
+                        f"Case #{case_id} cannot be marked RESOLVED while "
+                        f"{active_allocs['cnt']} active allocation(s) remain. "
+                        "Release all resources before closing the case."
+                    )
+                }), 409
 
         execute_query(
             "UPDATE emergency_cases SET triage_status = %s WHERE case_id = %s",

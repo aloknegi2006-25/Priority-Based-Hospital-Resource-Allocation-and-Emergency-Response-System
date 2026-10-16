@@ -290,25 +290,54 @@ def emergency_cases_view():
 
 @main_bp.route('/emergency-cases/<int:case_id>/status', methods=['POST'])
 def update_case_status_view(case_id):
-    """Updates the triage status of an emergency case via web form."""
+    """Updates the triage status of an emergency case via web form.
+
+    Prevents marking a case RESOLVED while any active resource allocations remain,
+    keeping case, allocation, and resource records consistent.
+    """
     new_status = request.form.get('status', '').strip().upper()
     if new_status not in VALID_CASE_STATUSES:
         flash(f"Invalid status '{new_status}'.", 'danger')
         return redirect(url_for('main.emergency_cases_view'))
 
     try:
-        case = execute_query("SELECT case_id FROM emergency_cases WHERE case_id = %s", (case_id,), fetch='one')
+        case = execute_query(
+            "SELECT case_id, triage_status FROM emergency_cases WHERE case_id = %s",
+            (case_id,),
+            fetch='one'
+        )
         if not case:
             flash(f"Emergency case #{case_id} not found.", 'danger')
             return redirect(url_for('main.emergency_cases_view'))
 
-        execute_query("UPDATE emergency_cases SET triage_status = %s WHERE case_id = %s", (new_status, case_id))
+        # Prevent RESOLVED if active allocations still exist for this case.
+        if new_status == 'RESOLVED':
+            active_allocs = execute_query(
+                "SELECT COUNT(*) AS cnt FROM resource_allocations "
+                "WHERE case_id = %s AND status = 'ACTIVE'",
+                (case_id,),
+                fetch='one'
+            )
+            if active_allocs and active_allocs['cnt'] > 0:
+                flash(
+                    f"Case #{case_id} cannot be marked RESOLVED while "
+                    f"{active_allocs['cnt']} active allocation(s) remain. "
+                    "Release all resources before closing the case.",
+                    'warning'
+                )
+                return redirect(url_for('main.emergency_cases_view'))
+
+        execute_query(
+            "UPDATE emergency_cases SET triage_status = %s WHERE case_id = %s",
+            (new_status, case_id)
+        )
         flash(f"Case #{case_id} status updated to '{new_status}'.", 'success')
     except Exception as e:
         logger.error("Error updating case status: %s", str(e))
         flash("Failed to update case status.", 'danger')
 
     return redirect(url_for('main.emergency_cases_view'))
+
 
 
 # -----------------------------------------------------------------------------
