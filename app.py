@@ -4,9 +4,9 @@ Team: SysForge | Phase 2: Functional Implementation (~40-50% Verified Completion
 Patient management, triage priority scheduling, resource inventory, atomic allocation/release, and live dashboard.
 """
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request, redirect, url_for, session
 from config import Config
-from routes import main_bp, patient_bp, resource_bp, allocation_bp
+from routes import main_bp, patient_bp, resource_bp, allocation_bp, auth_bp
 
 def create_app(config_class=Config):
     """
@@ -20,6 +20,51 @@ def create_app(config_class=Config):
     app.register_blueprint(patient_bp)
     app.register_blueprint(resource_bp)
     app.register_blueprint(allocation_bp)
+    app.register_blueprint(auth_bp)
+
+   
+   
+    @app.before_request
+    def require_login():
+        allowed_endpoints = ('auth.login', 'static', 'main.health_check')
+
+        if request.endpoint in allowed_endpoints:
+            return
+
+        if not session.get('user_id'):
+            return redirect(url_for('auth.login'))
+
+        role = session.get('role')
+
+        # Only Admin can manage resources
+        admin_only = {
+        'main.resources_view',
+    'resource_api.list_resources',
+    'resource_api.get_resource',
+   
+}
+
+        # Only Admin and Doctor can manage allocations
+        doctor_and_admin = {
+    'main.allocations_view',
+    'main.release_allocation_view',
+    'allocation_api.list_allocations',
+    'allocation_api.allocate_resource',
+    'allocation_api.release_resource',
+    'main.update_case_status_view',
+    'patient_api.update_case_status',
+}
+
+        # All authenticated roles can access patient and emergency records.
+        # Only Admin and Doctor can update case status or allocations.
+
+        if request.endpoint in admin_only and role != 'ADMIN':
+            return "Access Denied: Admin only.", 403
+
+        if request.endpoint in doctor_and_admin and role not in ('ADMIN', 'DOCTOR'):
+            return "Access Denied: Doctors and Admin only.", 403
+
+
 
     # Global Error Handlers for Clean API Responses
     @app.errorhandler(404)
